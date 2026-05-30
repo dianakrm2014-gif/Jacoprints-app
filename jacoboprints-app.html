@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#0a0a0a">
+<title>JacoboPrints — Pedidos</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0a;
+  --surface: #141414;
+  --surface2: #1e1e1e;
+  --border: rgba(255,255,255,0.08);
+  --border2: rgba(255,255,255,0.15);
+  --text: #f0ede8;
+  --muted: #888;
+  --accent: #c8f542;
+  --accent-dark: #9bbf2e;
+  --danger: #ff4d4d;
+  --warning: #ffb347;
+  --success: #4dff91;
+  --font-mono: 'Space Mono', monospace;
+  --font-body: 'DM Sans', sans-serif;
+  --radius: 12px;
+  --radius-lg: 18px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body { background: var(--bg); color: var(--text); font-family: var(--font-body); min-height: 100vh; overflow-x: hidden; }
+
+/* NAV */
+nav { position: sticky; top: 0; z-index: 100; background: rgba(10,10,10,0.92); backdrop-filter: blur(16px); border-bottom: 1px solid var(--border); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; }
+.logo { font-family: var(--font-mono); font-size: 14px; font-weight: 700; color: var(--accent); letter-spacing: -0.5px; }
+.logo span { color: var(--muted); font-weight: 400; }
+.nav-badge { background: var(--accent); color: #000; font-family: var(--font-mono); font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 20px; }
+
+/* TABS */
+.tabs { display: flex; gap: 2px; padding: 12px 16px 0; border-bottom: 1px solid var(--border); overflow-x: auto; scrollbar-width: none; }
+.tabs::-webkit-scrollbar { display: none; }
+.tab { font-family: var(--font-body); font-size: 13px; font-weight: 500; color: var(--muted); padding: 8px 16px; border-radius: var(--radius) var(--radius) 0 0; border: none; background: transparent; cursor: pointer; white-space: nowrap; transition: all .2s; border-bottom: 2px solid transparent; }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); background: rgba(200,245,66,0.04); }
+
+/* SCREENS */
+.screen { display: none; padding: 16px; animation: fadeIn .2s ease; }
+.screen.active { display: block; }
+@keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+
+/* SECTION LABEL */
+.section-label { font-family: var(--font-mono); font-size: 10px; color: var(--muted); letter-spacing: .12em; text-transform: uppercase; margin-bottom: 10px; margin-top: 20px; }
+.section-label:first-child { margin-top: 0; }
+
+/* PRODUCT CARDS */
+.products-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.product-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 14px; cursor: pointer; transition: all .15s; position: relative; user-select: none; }
+.product-card:active { transform: scale(0.97); }
+.product-card.selected { border-color: var(--accent); background: rgba(200,245,66,0.06); }
+.product-card.selected::after { content: '✓'; position: absolute; top: 10px; right: 12px; background: var(--accent); color: #000; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; }
+.product-icon { font-size: 28px; margin-bottom: 8px; display: block; }
+.product-name { font-size: 13px; font-weight: 600; color: var(--text); line-height: 1.3; margin-bottom: 4px; }
+.product-price { font-family: var(--font-mono); font-size: 12px; color: var(--accent); }
+
+/* QTY SELECTOR */
+.qty-row { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+.qty-btn { width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border2); background: var(--surface2); color: var(--text); font-size: 18px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .15s; }
+.qty-btn:active { background: var(--accent); color: #000; }
+.qty-display { font-family: var(--font-mono); font-size: 16px; font-weight: 700; min-width: 24px; text-align: center; }
+
+/* FORM */
+.form-group { margin-bottom: 14px; }
+.form-label { font-size: 12px; font-weight: 500; color: var(--muted); margin-bottom: 6px; display: block; }
+.form-input { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-family: var(--font-body); font-size: 15px; padding: 12px 14px; outline: none; transition: border-color .2s; }
+.form-input:focus { border-color: var(--accent); }
+.form-input::placeholder { color: var(--muted); }
+select.form-input { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; }
+textarea.form-input { resize: none; min-height: 80px; }
+
+/* ORDER SUMMARY */
+.summary-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px; margin-bottom: 14px; }
+.summary-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+.summary-row:last-child { border-bottom: none; }
+.summary-total { font-family: var(--font-mono); font-size: 20px; font-weight: 700; color: var(--accent); }
+.summary-label { color: var(--muted); font-size: 12px; }
+
+/* BUTTONS */
+.btn { width: 100%; padding: 16px; border-radius: var(--radius-lg); border: none; font-family: var(--font-body); font-size: 15px; font-weight: 600; cursor: pointer; transition: all .2s; }
+.btn-primary { background: var(--accent); color: #000; }
+.btn-primary:active { background: var(--accent-dark); transform: scale(0.98); }
+.btn-primary:disabled { background: var(--surface2); color: var(--muted); cursor: not-allowed; transform: none; }
+.btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border2); margin-top: 8px; }
+.btn-danger { background: rgba(255,77,77,0.1); color: var(--danger); border: 1px solid rgba(255,77,77,0.25); }
+
+/* ORDERS LIST */
+.order-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 14px; margin-bottom: 10px; }
+.order-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+.order-name { font-size: 15px; font-weight: 600; }
+.order-id { font-family: var(--font-mono); font-size: 10px; color: var(--muted); }
+.order-total { font-family: var(--font-mono); font-size: 16px; font-weight: 700; color: var(--accent); }
+.order-items { font-size: 12px; color: var(--muted); line-height: 1.7; }
+.status-badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; }
+.status-pendiente { background: rgba(255,179,71,0.15); color: var(--warning); }
+.status-listo { background: rgba(77,255,145,0.15); color: var(--success); }
+.status-entregado { background: rgba(136,136,136,0.15); color: var(--muted); }
+.order-actions { display: flex; gap: 8px; margin-top: 12px; }
+.order-btn { flex: 1; padding: 8px; border-radius: 8px; border: 1px solid var(--border2); background: var(--surface2); color: var(--text); font-size: 12px; font-weight: 500; cursor: pointer; transition: all .15s; }
+.order-btn:active { background: var(--accent); color: #000; border-color: var(--accent); }
+.order-btn.danger { color: var(--danger); border-color: rgba(255,77,77,0.3); }
+
+/* STATS */
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px; }
+.stat-value { font-family: var(--font-mono); font-size: 22px; font-weight: 700; color: var(--accent); }
+.stat-label { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.progress-bar { height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; margin: 12px 0 6px; }
+.progress-fill { height: 100%; border-radius: 3px; background: var(--accent); transition: width .5s ease; }
+.progress-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); }
+
+/* SETTINGS */
+.settings-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 8px; }
+.settings-label { font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+.settings-desc { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+
+/* TOAST */
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--text); color: #000; font-size: 14px; font-weight: 500; padding: 12px 20px; border-radius: 30px; z-index: 999; transition: transform .3s cubic-bezier(.34,1.56,.64,1); white-space: nowrap; pointer-events: none; }
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+/* EMPTY STATE */
+.empty { text-align: center; padding: 48px 20px; color: var(--muted); }
+.empty-icon { font-size: 48px; margin-bottom: 12px; display: block; opacity: .4; }
+.empty-text { font-size: 14px; }
+
+/* STEP INDICATOR */
+.steps { display: flex; gap: 6px; margin-bottom: 20px; }
+.step-dot { flex: 1; height: 3px; border-radius: 2px; background: var(--surface2); transition: background .3s; }
+.step-dot.active { background: var(--accent); }
+.step-dot.done { background: rgba(200,245,66,0.4); }
+
+/* SELECTED ITEMS CHIP ROW */
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.chip { background: rgba(200,245,66,0.1); border: 1px solid rgba(200,245,66,0.3); border-radius: 20px; padding: 4px 10px; font-size: 12px; color: var(--accent); display: flex; align-items: center; gap: 6px; }
+.chip-x { cursor: pointer; opacity: .6; }
+.chip-x:hover { opacity: 1; }
+
+/* SHEET CONFIG NOTICE */
+.config-notice { background: rgba(200,245,66,0.06); border: 1px solid rgba(200,245,66,0.2); border-radius: var(--radius); padding: 14px; margin-bottom: 16px; font-size: 13px; line-height: 1.6; }
+.config-notice strong { color: var(--accent); }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">JACOBO<span>PRINTS</span></div>
+  <div class="nav-badge" id="order-count-badge">0 pedidos</div>
+</nav>
+
+<div class="tabs">
+  <button class="tab active" onclick="showTab('nuevo')">+ Nuevo pedido</button>
+  <button class="tab" onclick="showTab('lista')">Lista</button>
+  <button class="tab" onclick="showTab('stats')">Resumen $</button>
+  <button class="tab" onclick="showTab('config')">Config</button>
+</div>
+
+<!-- ════════════════════════════════ NUEVO PEDIDO ════════════════════════════════ -->
+<div class="screen active" id="screen-nuevo">
+
+  <div class="steps">
+    <div class="step-dot active" id="dot-0"></div>
+    <div class="step-dot" id="dot-1"></div>
+    <div class="step-dot" id="dot-2"></div>
+  </div>
+
+  <!-- STEP 0: CLIENTE -->
+  <div id="step-0">
+    <div class="section-label">Datos del cliente</div>
+    <div class="form-group">
+      <label class="form-label">Nombre del cliente</label>
+      <input class="form-input" id="inp-nombre" type="text" placeholder="Ej: Carlos Pérez" autocomplete="off">
+    </div>
+    <div class="form-group">
+      <label class="form-label">WhatsApp / contacto</label>
+      <input class="form-input" id="inp-contacto" type="tel" placeholder="315 123 4567">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Tipo de venta</label>
+      <select class="form-input" id="inp-tipo">
+        <option value="Torneo 1 (31 may - 1 jun)">Torneo 1 — 31 may / 1 jun 2026</option>
+        <option value="Torneo 2 (7-8 jun)">Torneo 2 — 7–8 jun 2026</option>
+        <option value="Encargo WhatsApp">Encargo por WhatsApp</option>
+        <option value="Mercado Libre">Mercado Libre</option>
+        <option value="Colegio">Colegio</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" onclick="goStep(1)">Siguiente — Elegir productos</button>
+  </div>
+
+  <!-- STEP 1: PRODUCTOS -->
+  <div id="step-1" style="display:none">
+    <div class="section-label">Productos</div>
+    <div class="products-grid" id="products-grid"></div>
+    <div id="selected-chips" class="chips" style="margin-top:14px"></div>
+    <div class="form-group" style="margin-top:4px">
+      <label class="form-label">Notas / personalización</label>
+      <textarea class="form-input" id="inp-notas" placeholder="Ej: con nombre 'Juan' en la base, color azul..."></textarea>
+    </div>
+    <button class="btn btn-primary" onclick="goStep(2)" id="btn-step2">Ver resumen</button>
+    <button class="btn btn-secondary" onclick="goStep(0)">Atrás</button>
+  </div>
+
+  <!-- STEP 2: RESUMEN -->
+  <div id="step-2" style="display:none">
+    <div class="section-label">Resumen del pedido</div>
+    <div class="summary-card" id="order-summary"></div>
+    <div class="form-group">
+      <label class="form-label">Estado del pedido</label>
+      <select class="form-input" id="inp-estado">
+        <option value="pendiente">Pendiente (aún no entregado)</option>
+        <option value="listo">Listo para entregar</option>
+        <option value="entregado">Entregado y pagado</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" id="btn-guardar" onclick="saveOrder()">Guardar pedido</button>
+    <button class="btn btn-secondary" onclick="goStep(1)">Atrás</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════ LISTA ════════════════════════════════ -->
+<div class="screen" id="screen-lista">
+  <div class="form-group">
+    <input class="form-input" id="search-input" type="text" placeholder="Buscar por nombre..." oninput="renderOrders()">
+  </div>
+  <div class="form-group">
+    <select class="form-input" id="filter-estado" onchange="renderOrders()">
+      <option value="">Todos los estados</option>
+      <option value="pendiente">Pendientes</option>
+      <option value="listo">Listos</option>
+      <option value="entregado">Entregados</option>
+    </select>
+  </div>
+  <div id="orders-list"></div>
+</div>
+
+<!-- ════════════════════════════════ STATS ════════════════════════════════ -->
+<div class="screen" id="screen-stats">
+  <div class="stats-grid" id="stats-grid"></div>
+  <div id="stats-detail"></div>
+</div>
+
+<!-- ════════════════════════════════ CONFIG ════════════════════════════════ -->
+<div class="screen" id="screen-config">
+  <div class="config-notice">
+    <strong>Cómo conectar Google Sheets:</strong><br>
+    1. Crea una hoja en <strong>sheets.google.com</strong><br>
+    2. Ve a <strong>Extensiones → Apps Script</strong><br>
+    3. Pega el script que aparece abajo y publícalo como app web<br>
+    4. Copia la URL del Web App y pégala aquí
+  </div>
+
+  <div class="settings-item">
+    <div class="settings-label">URL del Web App (Google Apps Script)</div>
+    <div class="settings-desc">Pega aquí la URL de tu script publicado para sincronizar pedidos automáticamente.</div>
+    <input class="form-input" id="inp-sheet-url" type="url" placeholder="https://script.google.com/macros/s/..." style="margin-bottom:8px">
+    <button class="btn btn-primary" onclick="saveSheetUrl()" style="padding:10px">Guardar URL</button>
+  </div>
+
+  <div class="settings-item">
+    <div class="settings-label">Script de Google Apps Script</div>
+    <div class="settings-desc">Copia este código completo en Apps Script:</div>
+    <button class="btn btn-secondary" onclick="copyScript()" style="padding:10px;font-size:13px">📋 Copiar script</button>
+  </div>
+
+  <div class="settings-item">
+    <div class="settings-label">Sincronizar pedidos locales a Sheets</div>
+    <div class="settings-desc">Envía todos los pedidos guardados en este dispositivo a Google Sheets.</div>
+    <button class="btn btn-secondary" onclick="syncAll()" style="padding:10px;font-size:13px">☁️ Sincronizar ahora</button>
+  </div>
+
+  <div class="settings-item">
+    <div class="settings-label">Peligro</div>
+    <button class="btn btn-danger" onclick="confirmClear()" style="padding:10px;font-size:13px;margin-top:0">🗑 Borrar todos los pedidos locales</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── PRODUCTS CATALOG ──────────────────────────────────────────
+const PRODUCTS = [
+  { id:'llavero',  icon:'🔑', name:'Llavero raqueta',              price:15000,  desc:'PLA · 12gr · 1h · margen 88%' },
+  { id:'gancho',   icon:'🪝', name:'Gancho para elementos',         price:40000,  desc:'PETG · 37gr · 1h · margen 88%' },
+  { id:'soporte1', icon:'📱', name:'Soporte celular 1 cuna',        price:70000,  desc:'PETG · 98gr · 4h · margen 82%' },
+  { id:'soporte2', icon:'📱', name:'Soporte celular 2 cunas',       price:100000, desc:'PETG · 216gr · 6h · margen 73%' },
+];
+
+// ── STATE ─────────────────────────────────────────────────────
+let orders = JSON.parse(localStorage.getItem('jp_orders') || '[]');
+let cart = {}; // { productId: qty }
+let currentStep = 0;
+
+// ── HELPERS ───────────────────────────────────────────────────
+const fmt = n => '$' + n.toLocaleString('es-CO');
+const uid = () => 'JP-' + Date.now().toString(36).toUpperCase().slice(-5);
+
+function toast(msg, dur = 2200) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), dur);
+}
+
+function saveOrders() {
+  localStorage.setItem('jp_orders', JSON.stringify(orders));
+  updateBadge();
+}
+
+function updateBadge() {
+  const pending = orders.filter(o => o.estado !== 'entregado').length;
+  document.getElementById('order-count-badge').textContent =
+    pending + ' pedido' + (pending !== 1 ? 's' : '');
+}
+
+// ── TABS ──────────────────────────────────────────────────────
+function showTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('screen-' + name).classList.add('active');
+  if (name === 'lista') renderOrders();
+  if (name === 'stats') renderStats();
+}
+
+// ── STEPS ─────────────────────────────────────────────────────
+function goStep(n) {
+  if (n === 1) {
+    const nombre = document.getElementById('inp-nombre').value.trim();
+    if (!nombre) { toast('Escribe el nombre del cliente'); return; }
+  }
+  if (n === 2) {
+    if (Object.keys(cart).length === 0) { toast('Selecciona al menos un producto'); return; }
+    renderSummary();
+  }
+  document.getElementById('step-' + currentStep).style.display = 'none';
+  currentStep = n;
+  document.getElementById('step-' + n).style.display = 'block';
+  // update dots
+  [0,1,2].forEach(i => {
+    document.getElementById('dot-' + i).className = 'step-dot' + (i < n ? ' done' : i === n ? ' active' : '');
+  });
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+// ── PRODUCTS GRID ─────────────────────────────────────────────
+function renderProductsGrid() {
+  const grid = document.getElementById('products-grid');
+  grid.innerHTML = PRODUCTS.map(p => `
+    <div class="product-card ${cart[p.id] ? 'selected' : ''}" id="pcard-${p.id}" onclick="toggleProduct('${p.id}')">
+      <span class="product-icon">${p.icon}</span>
+      <div class="product-name">${p.name}</div>
+      <div class="product-price">${fmt(p.price)}</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:2px">${p.desc}</div>
+      ${cart[p.id] ? `<div class="qty-row" onclick="event.stopPropagation()">
+        <button class="qty-btn" onclick="changeQty('${p.id}',-1)">−</button>
+        <span class="qty-display">${cart[p.id]}</span>
+        <button class="qty-btn" onclick="changeQty('${p.id}',1)">+</button>
+      </div>` : ''}
+    </div>
+  `).join('');
+  renderChips();
+}
+
+function toggleProduct(id) {
+  if (cart[id]) { delete cart[id]; } else { cart[id] = 1; }
+  renderProductsGrid();
+}
+
+function changeQty(id, delta) {
+  cart[id] = Math.max(1, (cart[id] || 1) + delta);
+  renderProductsGrid();
+}
+
+function renderChips() {
+  const chips = document.getElementById('selected-chips');
+  const entries = Object.entries(cart);
+  if (!entries.length) { chips.innerHTML = ''; return; }
+  chips.innerHTML = entries.map(([id, qty]) => {
+    const p = PRODUCTS.find(x => x.id === id);
+    return `<div class="chip">${p.icon} ${p.name} ×${qty} <span class="chip-x" onclick="toggleProduct('${id}')">✕</span></div>`;
+  }).join('');
+}
+
+// ── SUMMARY ───────────────────────────────────────────────────
+function renderSummary() {
+  let rows = '';
+  let total = 0;
+  Object.entries(cart).forEach(([id, qty]) => {
+    const p = PRODUCTS.find(x => x.id === id);
+    const sub = p.price * qty;
+    total += sub;
+    rows += `<div class="summary-row"><span>${p.icon} ${p.name} ×${qty}</span><span>${fmt(sub)}</span></div>`;
+  });
+  const notas = document.getElementById('inp-notas').value;
+  if (notas) rows += `<div class="summary-row"><span class="summary-label">Nota</span><span style="font-size:12px;text-align:right;max-width:55%">${notas}</span></div>`;
+  rows += `<div class="summary-row"><span style="font-weight:600">Total</span><span class="summary-total">${fmt(total)}</span></div>`;
+  document.getElementById('order-summary').innerHTML = `
+    <div class="summary-row"><span class="summary-label">Cliente</span><span>${document.getElementById('inp-nombre').value}</span></div>
+    <div class="summary-row"><span class="summary-label">Canal</span><span style="font-size:12px">${document.getElementById('inp-tipo').value}</span></div>
+    ${rows}
+  `;
+}
+
+// ── SAVE ORDER ────────────────────────────────────────────────
+function saveOrder() {
+  const btn = document.getElementById('btn-guardar');
+  btn.disabled = true; btn.textContent = 'Guardando...';
+  const items = Object.entries(cart).map(([id, qty]) => {
+    const p = PRODUCTS.find(x => x.id === id);
+    return { id, name: p.name, icon: p.icon, price: p.price, qty };
+  });
+  const total = items.reduce((s, i) => s + i.price * i.qty, 0);
+  const order = {
+    id: uid(),
+    fecha: new Date().toISOString(),
+    nombre: document.getElementById('inp-nombre').value.trim(),
+    contacto: document.getElementById('inp-contacto').value.trim(),
+    tipo: document.getElementById('inp-tipo').value,
+    notas: document.getElementById('inp-notas').value.trim(),
+    estado: document.getElementById('inp-estado').value,
+    items, total, synced: false
+  };
+  orders.unshift(order);
+  saveOrders();
+  syncToSheets(order);
+
+  // reset
+  cart = {};
+  ['inp-nombre','inp-contacto','inp-notas'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('inp-estado').value = 'pendiente';
+  goStep(0);
+  btn.disabled = false; btn.textContent = 'Guardar pedido';
+  toast('✅ Pedido guardado — ' + order.id);
+}
+
+// ── RENDER ORDERS ─────────────────────────────────────────────
+function renderOrders() {
+  const q = document.getElementById('search-input').value.toLowerCase();
+  const f = document.getElementById('filter-estado').value;
+  const list = document.getElementById('orders-list');
+  let filtered = orders.filter(o => {
+    const matchQ = !q || o.nombre.toLowerCase().includes(q);
+    const matchF = !f || o.estado === f;
+    return matchQ && matchF;
+  });
+  if (!filtered.length) {
+    list.innerHTML = `<div class="empty"><span class="empty-icon">📭</span><div class="empty-text">No hay pedidos</div></div>`;
+    return;
+  }
+  list.innerHTML = filtered.map(o => {
+    const d = new Date(o.fecha);
+    const dateStr = d.toLocaleDateString('es-CO', { day:'2-digit', month:'short' }) + ' ' + d.toLocaleTimeString('es-CO', { hour:'2-digit', minute:'2-digit' });
+    const itemsStr = o.items.map(i => `${i.icon} ${i.name} ×${i.qty}`).join(' · ');
+    const statusLabel = { pendiente: 'Pendiente', listo: 'Listo ✓', entregado: 'Entregado ✅' };
+    return `
+      <div class="order-card">
+        <div class="order-header">
+          <div>
+            <div class="order-name">${o.nombre}</div>
+            <div class="order-id">${o.id} · ${dateStr} · ${o.tipo}</div>
+          </div>
+          <div style="text-align:right">
+            <div class="order-total">${fmt(o.total)}</div>
+            <span class="status-badge status-${o.estado}">${statusLabel[o.estado]}</span>
+          </div>
+        </div>
+        <div class="order-items">${itemsStr}${o.notas ? '<br>📝 ' + o.notas : ''}</div>
+        <div class="order-actions">
+          <button class="order-btn" onclick="cycleStatus('${o.id}')">Cambiar estado</button>
+          <button class="order-btn" onclick="shareOrder('${o.id}')">Compartir</button>
+          <button class="order-btn danger" onclick="deleteOrder('${o.id}')">Borrar</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function cycleStatus(id) {
+  const o = orders.find(x => x.id === id);
+  if (!o) return;
+  const cycle = { pendiente: 'listo', listo: 'entregado', entregado: 'pendiente' };
+  o.estado = cycle[o.estado];
+  saveOrders();
+  renderOrders();
+  toast('Estado: ' + o.estado);
+}
+
+function deleteOrder(id) {
+  if (!confirm('¿Borrar este pedido?')) return;
+  orders = orders.filter(o => o.id !== id);
+  saveOrders();
+  renderOrders();
+  toast('Pedido borrado');
+}
+
+function shareOrder(id) {
+  const o = orders.find(x => x.id === id);
+  if (!o) return;
+  const text = `*JacoboPrints — Pedido ${o.id}*\nCliente: ${o.nombre}\n${o.contacto ? 'Tel: ' + o.contacto + '\n' : ''}Productos:\n${o.items.map(i => `  ${i.icon} ${i.name} ×${i.qty} = ${fmt(i.price * i.qty)}`).join('\n')}\n*Total: ${fmt(o.total)}*\n${o.notas ? 'Nota: ' + o.notas : ''}`;
+  if (navigator.share) {
+    navigator.share({ text });
+  } else if (navigator.clipboard) {
+    navigator.clipboard.writeText(text);
+    toast('📋 Copiado al portapapeles');
+  }
+}
+
+// ── STATS ─────────────────────────────────────────────────────
+function renderStats() {
+  const total = orders.reduce((s, o) => s + o.total, 0);
+  const cobrado = orders.filter(o => o.estado === 'entregado').reduce((s, o) => s + o.total, 0);
+  const pendientes = orders.filter(o => o.estado === 'pendiente').length;
+  const meta = 1000000;
+  const pct = Math.min(100, Math.round(cobrado / meta * 100));
+
+  document.getElementById('stats-grid').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-value">${fmt(total)}</div>
+      <div class="stat-label">Total pedidos</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">${fmt(cobrado)}</div>
+      <div class="stat-label">Cobrado / entregado</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">${orders.length}</div>
+      <div class="stat-label">Pedidos totales</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">${pendientes}</div>
+      <div class="stat-label">Pendientes de cobro</div>
+    </div>
+  `;
+
+  // product breakdown
+  const breakdown = {};
+  orders.forEach(o => o.items.forEach(i => {
+    if (!breakdown[i.name]) breakdown[i.name] = { qty: 0, total: 0, icon: i.icon };
+    breakdown[i.name].qty += i.qty;
+    breakdown[i.name].total += i.price * i.qty;
+  }));
+  const sorted = Object.entries(breakdown).sort((a,b) => b[1].total - a[1].total);
+
+  document.getElementById('stats-detail').innerHTML = `
+    <div class="section-label">Meta deuda — ${fmt(meta)}</div>
+    <div class="summary-card">
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+      <div class="progress-labels"><span>${pct}% cobrado</span><span>Faltan ${fmt(Math.max(0, meta - cobrado))}</span></div>
+    </div>
+    <div class="section-label">Por producto</div>
+    ${sorted.map(([name, d]) => `
+      <div class="summary-row">
+        <span>${d.icon} ${name} (${d.qty} uds)</span>
+        <span style="font-family:var(--font-mono);font-size:13px">${fmt(d.total)}</span>
+      </div>
+    `).join('') || '<div class="empty-text" style="padding:20px;text-align:center;color:var(--muted)">Sin ventas aún</div>'}
+  `;
+}
+
+// ── GOOGLE SHEETS SYNC ────────────────────────────────────────
+function getSheetUrl() { return localStorage.getItem('jp_sheet_url') || ''; }
+
+function saveSheetUrl() {
+  const url = document.getElementById('inp-sheet-url').value.trim();
+  localStorage.setItem('jp_sheet_url', url);
+  toast(url ? '✅ URL guardada' : 'URL borrada');
+}
+
+async function syncToSheets(order) {
+  const url = getSheetUrl();
+  if (!url) return;
+  try {
+    await fetch(url, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'addOrder',
+        id: order.id,
+        fecha: new Date(order.fecha).toLocaleString('es-CO'),
+        nombre: order.nombre,
+        contacto: order.contacto,
+        canal: order.tipo,
+        productos: order.items.map(i => `${i.name} x${i.qty}`).join(', '),
+        total: order.total,
+        estado: order.estado,
+        notas: order.notas
+      })
+    });
+    order.synced = true;
+    saveOrders();
+  } catch(e) { /* silent */ }
+}
+
+async function syncAll() {
+  const url = getSheetUrl();
+  if (!url) { toast('Primero configura la URL de Google Sheets'); return; }
+  toast('Sincronizando...');
+  for (const o of orders) { await syncToSheets(o); }
+  toast('✅ Sincronización completa');
+}
+
+function copyScript() {
+  const script = `// JacoboPrints — Google Apps Script
+// Pega este código en Extensions → Apps Script → guardar → Deploy → Web App
+
+function doPost(e) {
+  try {
+    const data = JSON.parse(e.postData.contents);
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    let sheet = ss.getSheetByName('Pedidos');
+    if (!sheet) {
+      sheet = ss.insertSheet('Pedidos');
+      sheet.appendRow(['ID','Fecha','Cliente','Contacto','Canal','Productos','Total','Estado','Notas']);
+    }
+    if (data.action === 'addOrder') {
+      sheet.appendRow([
+        data.id, data.fecha, data.nombre, data.contacto,
+        data.canal, data.productos, data.total, data.estado, data.notas
+      ]);
+    }
+    return ContentService.createTextOutput(JSON.stringify({ok:true})).setMimeType(ContentService.MimeType.JSON);
+  } catch(err) {
+    return ContentService.createTextOutput(JSON.stringify({error:err.message})).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function doGet(e) {
+  return ContentService.createTextOutput('JacoboPrints API activa').setMimeType(ContentService.MimeType.TEXT);
+}`;
+
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(script);
+    toast('📋 Script copiado — pégalo en Apps Script');
+  }
+}
+
+function confirmClear() {
+  if (confirm('¿Borrar TODOS los pedidos locales? Esta acción no se puede deshacer.')) {
+    orders = [];
+    saveOrders();
+    toast('Pedidos borrados');
+  }
+}
+
+// ── INIT ──────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  renderProductsGrid();
+  updateBadge();
+  const savedUrl = localStorage.getItem('jp_sheet_url') || '';
+  if (savedUrl) document.getElementById('inp-sheet-url').value = savedUrl;
+});
+</script>
+</body>
+</html>
